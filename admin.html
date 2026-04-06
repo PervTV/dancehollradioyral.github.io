@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Админка</title>
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding-top: 100px; }
+        .hidden { display: none; }
+        input { padding: 10px; border-radius: 5px; border: none; }
+        button { padding: 10px 20px; background: #1db954; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="login-block">
+        <h1>Вход в систему</h1>
+        <input type="password" id="pass" placeholder="Пароль">
+        <button onclick="check()">Войти</button>
+    </div>
+
+    <div id="admin-block" class="hidden">
+        <h1>Редактор Music Chart</h1>
+        <textarea id="chart-edit" style="width: 80%; height: 200px;"></textarea><br><br>
+        <button onclick="save()">Сохранить для всех</button>
+        <p style="color: #888">Примечание: Чтобы это сохранялось на GitHub, нужно подключить Supabase (базу данных).</p>
+    </div>
+
+    <script>
+        function check() {
+            if(document.getElementById('pass').value === '666') { // Твой пароль
+                document.getElementById('login-block').classList.add('hidden');
+                document.getElementById('admin-block').classList.remove('hidden');
+            } else {
+                alert('Неверно!');
+            }
+        }
+        
+        function save() {
+            alert('На GitHub Pages нельзя просто так сохранить файл через PHP. Тебе нужно подключить базу данных Supabase. Помочь с этим?');
+        }
+    </script>
+</body>
+</html>
