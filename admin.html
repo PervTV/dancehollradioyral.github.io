@@ -2,89 +2,112 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Radio Control Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHR | Admin Panel</title>
     <style>
-        body { background: #0b0b0b; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .card { background: #181818; padding: 25px; border-radius: 12px; border: 1px solid #1db954; width: 100%; max-width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { color: #1db954; text-align: center; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
-        input { width: 100%; background: #222; border: 1px solid #333; color: #fff; padding: 12px; margin-bottom: 15px; border-radius: 8px; box-sizing: border-box; transition: 0.3s; }
-        input:focus { border-color: #1db954; background: #2a2a2a; outline: none; }
-        button { background: #1db954; color: #000; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        body { background: #0b0b0b; color: #eee; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background: #181818; padding: 25px; border-radius: 12px; border: 1px solid #1db954; width: 100%; max-width: 700px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 30px; }
+        h2 { color: #1db954; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
+        input[type="password"] { width: 100%; background: #222; border: 1px solid #333; color: #fff; padding: 12px; margin-bottom: 15px; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        textarea { width: 100%; height: 500px; background: #111; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 8px; box-sizing: border-box; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; resize: vertical; margin-bottom: 15px; }
+        button { background: #1db954; color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; font-size: 14px; }
         button:hover { background: #1ed760; transform: translateY(-2px); }
         button:disabled { background: #444; cursor: not-allowed; }
         .hidden { display: none; }
-        .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; background: #222; padding: 5px 10px; border-radius: 6px; }
-        .row span { width: 25px; color: #1db954; font-weight: bold; }
-        .row input { margin-bottom: 0; padding: 8px; border: none; }
+        #status { text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="login" class="card">
+
+    <div id="login-box" class="card">
         <h2>🔒 Авторизация</h2>
-        <input type="password" id="p" placeholder="Введите сложный пароль">
-        <button onclick="auth()">Войти в систему</button>
+        <input type="password" id="pass-input" placeholder="Введите пароль">
+        <button onclick="checkAuth()">Войти в систему</button>
     </div>
 
-    <div id="editor" class="card hidden">
-        <h2>🎵 Music Chart Editor</h2>
-        <div id="list"></div>
-        <button id="save" onclick="save()">Обновить чарт</button>
-        <p id="msg" style="text-align:center; color: #888; margin-top:10px;"></p>
+    <div id="editor-box" class="card hidden">
+        <h2>🎵 Редактор Music Chart</h2>
+        <p style="color: #888; font-size: 12px; margin-bottom: 10px;">Вставь текст чарта целиком (со всеми стрелочками и пробелами):</p>
+        <textarea id="chart-content" placeholder="Загрузка данных из базы..."></textarea>
+        <button id="save-btn" onclick="saveToDB()">ОПУБЛИКОВАТЬ НА САЙТЕ</button>
+        <div id="status"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <script>
+        // Твои настройки Supabase
         const SB_URL = 'https://immwfduunwqqpkoszfeb.supabase.co';
         const SB_KEY = 'sb_publishable_IizaK7JwvJsaWv8x6qrLUg_OKWK7bqL';
-        const _sb = supabase.createClient(SB_URL, SB_KEY);
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // Хэш твоего пароля (сделаем его сейчас)
-        // Если твой пароль "Admin_Radio_2026_!", то его хэш:
-        const MASTER_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; 
+        // Хэш пароля: DanceHollRadioAdmin1234!
+        const MASTER_HASH = "d1822822180004944917983652613146059d0445f17f9038243171833076800a";
 
-        function auth() {
-            const inputPass = document.getElementById('p').value;
-            const inputHash = CryptoJS.SHA256(inputPass).toString();
+        // Функция входа
+        function checkAuth() {
+            const pass = document.getElementById('pass-input').value;
+            const hash = CryptoJS.SHA256(pass).toString();
 
-            if(inputHash === MASTER_HASH) {
-                document.getElementById('login').classList.add('hidden');
-                document.getElementById('editor').classList.remove('hidden');
-                load();
-            } else { 
-                alert('Доступ запрещен. Неверный пароль.'); 
+            if (hash === MASTER_HASH) {
+                document.getElementById('login-box').classList.add('hidden');
+                document.getElementById('editor-box').classList.remove('hidden');
+                loadData();
+            } else {
+                alert("Пароль неверный!");
             }
         }
 
-        async function load() {
-            const { data, error } = await _sb.from('music_chart').select('*').order('id', { ascending: true });
-            if (error) { alert('Ошибка БД: ' + error.message); return; }
-            
-            document.getElementById('list').innerHTML = data.map(t => `
-                <div class="row">
-                    <span>${t.id}</span>
-                    <input type="text" class="t-in" data-id="${t.id}" value="${t.track_name}">
-                </div>
-            `).join('');
+        // Поддержка Enter при вводе пароля
+        document.getElementById('pass-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAuth();
+        });
+
+        // Загрузка текста из базы
+        async function loadData() {
+            const { data, error } = await _supabase
+                .from('music_chart')
+                .select('full_content')
+                .eq('id', 1)
+                .single();
+
+            if (error) {
+                console.error(error);
+                alert("Ошибка при загрузке. Убедись, что в таблице создана строка с ID 1");
+                return;
+            }
+
+            if (data) {
+                document.getElementById('chart-content').value = data.full_content || "";
+            }
         }
 
-        async function save() {
-            const btn = document.getElementById('save');
-            const msg = document.getElementById('msg');
+        // Сохранение текста в базу
+        async function saveToDB() {
+            const btn = document.getElementById('save-btn');
+            const status = document.getElementById('status');
+            const newText = document.getElementById('chart-content').value;
+
             btn.disabled = true;
-            msg.innerText = "Синхронизация с базой...";
+            status.style.color = "#888";
+            status.innerText = "⏳ Сохранение...";
 
-            const inputs = document.querySelectorAll('.t-in');
-            for (let i of inputs) {
-                await _sb.from('music_chart')
-                         .update({ track_name: i.value })
-                         .eq('id', i.getAttribute('data-id'));
-            }
+            const { error } = await _supabase
+                .from('music_chart')
+                .update({ full_content: newText })
+                .eq('id', 1);
 
             btn.disabled = false;
-            msg.innerText = "✅ Данные успешно обновлены!";
-            setTimeout(() => { msg.innerText = ""; }, 3000);
+
+            if (error) {
+                status.style.color = "#ff4444";
+                status.innerText = "❌ Ошибка: " + error.message;
+            } else {
+                status.style.color = "#1db954";
+                status.innerText = "✅ ЧАРТ УСПЕШНО ОБНОВЛЕН!";
+                setTimeout(() => { status.innerText = ""; }, 3000);
+            }
         }
     </script>
 </body>
