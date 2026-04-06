@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DHR | Admin Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
         body { background: #0b0b0b; color: #eee; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .card { background: #181818; padding: 25px; border-radius: 12px; border: 1px solid #1db954; width: 100%; max-width: 700px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 30px; }
         h2 { color: #1db954; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
         input[type="password"] { width: 100%; background: #222; border: 1px solid #333; color: #fff; padding: 12px; margin-bottom: 15px; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        textarea { width: 100%; height: 500px; background: #111; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 8px; box-sizing: border-box; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; resize: vertical; margin-bottom: 15px; }
+        textarea { width: 100%; height: 550px; background: #111; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 8px; box-sizing: border-box; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; resize: vertical; margin-bottom: 15px; }
         button { background: #1db954; color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; font-size: 14px; }
         button:hover { background: #1ed760; transform: translateY(-2px); }
         button:disabled { background: #444; cursor: not-allowed; }
@@ -20,51 +21,45 @@
 <body>
 
     <div id="login-box" class="card">
-        <h2>🔒 Авторизация</h2>
+        <h2>🔒 Вход в управление</h2>
         <input type="password" id="pass-input" placeholder="Введите пароль">
-        <button onclick="checkAuth()">Войти в систему</button>
+        <button onclick="checkAuth()">Войти</button>
     </div>
 
     <div id="editor-box" class="card hidden">
-        <h2>🎵 Редактор Music Chart</h2>
-        <p style="color: #888; font-size: 12px; margin-bottom: 10px;">Вставь текст чарта целиком (со всеми стрелочками и пробелами):</p>
-        <textarea id="chart-content" placeholder="Загрузка данных из базы..."></textarea>
+        <h2>🎵 Music Chart Editor</h2>
+        <textarea id="chart-content" placeholder="Загрузка данных из Supabase..."></textarea>
         <button id="save-btn" onclick="saveToDB()">ОПУБЛИКОВАТЬ НА САЙТЕ</button>
         <div id="status"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-
     <script>
-        // Твои настройки Supabase
+        // Настройки базы
         const SB_URL = 'https://immwfduunwqqpkoszfeb.supabase.co';
         const SB_KEY = 'sb_publishable_IizaK7JwvJsaWv8x6qrLUg_OKWK7bqL';
         const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // Хэш пароля: DanceHollRadioAdmin1234!
-        const MASTER_HASH = "d1822822180004944917983652613146059d0445f17f9038243171833076800a";
+        // ПАРОЛЬ ПРЯМЫМ ТЕКСТОМ (БЕЗ ХЭША)
+        const MY_PASS = "DanceHollRadioAdmin1234!";
 
-        // Функция входа
         function checkAuth() {
-            const pass = document.getElementById('pass-input').value;
-            const hash = CryptoJS.SHA256(pass).toString();
+            const inputVal = document.getElementById('pass-input').value.trim();
 
-            if (hash === MASTER_HASH) {
+            if (inputVal === MY_PASS) {
                 document.getElementById('login-box').classList.add('hidden');
                 document.getElementById('editor-box').classList.remove('hidden');
                 loadData();
             } else {
-                alert("Пароль неверный!");
+                alert("Пароль неверный! Убедись, что вводишь: DanceHollRadioAdmin1234!");
             }
         }
 
-        // Поддержка Enter при вводе пароля
+        // Enter для входа
         document.getElementById('pass-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') checkAuth();
         });
 
-        // Загрузка текста из базы
+        // Загрузка
         async function loadData() {
             const { data, error } = await _supabase
                 .from('music_chart')
@@ -73,39 +68,35 @@
                 .single();
 
             if (error) {
-                console.error(error);
-                alert("Ошибка при загрузке. Убедись, что в таблице создана строка с ID 1");
+                alert("Ошибка загрузки: Проверь ID строки в базе.");
                 return;
             }
-
             if (data) {
                 document.getElementById('chart-content').value = data.full_content || "";
             }
         }
 
-        // Сохранение текста в базу
+        // Сохранение
         async function saveToDB() {
             const btn = document.getElementById('save-btn');
             const status = document.getElementById('status');
-            const newText = document.getElementById('chart-content').value;
+            const text = document.getElementById('chart-content').value;
 
             btn.disabled = true;
-            status.style.color = "#888";
-            status.innerText = "⏳ Сохранение...";
+            status.innerText = "⏳ Сохраняю...";
 
             const { error } = await _supabase
                 .from('music_chart')
-                .update({ full_content: newText })
+                .update({ full_content: text })
                 .eq('id', 1);
 
             btn.disabled = false;
-
             if (error) {
-                status.style.color = "#ff4444";
+                status.style.color = "red";
                 status.innerText = "❌ Ошибка: " + error.message;
             } else {
                 status.style.color = "#1db954";
-                status.innerText = "✅ ЧАРТ УСПЕШНО ОБНОВЛЕН!";
+                status.innerText = "✅ ЧАРТ ОБНОВЛЕН!";
                 setTimeout(() => { status.innerText = ""; }, 3000);
             }
         }
