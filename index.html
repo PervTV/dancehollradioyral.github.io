@@ -60,6 +60,26 @@
         border: 1px solid #ddd;
         min-height: 50px;
     }
+
+    /* СТИЛИ ДЛЯ НОВОГО ПЛЕЕРА-ПОЛОСКИ */
+    .custom-player-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 15px;
+        background: #f4f4f4;
+    }
+
+    .custom-player-wrap {
+        width: 100%;
+        max-width: 800px;
+        background: #ffffff;
+        border-radius: 50px; /* Закругление */
+        padding: 10px 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border: 1px solid #eee;
+        overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -140,6 +160,12 @@
     </div>
 </section>
 
+<div class="custom-player-container">
+    <div class="custom-player-wrap">
+        <div id="my_player_fixed" class="my_player" data-player="adaptive" data-skin="" data-width="100%" data-autoplay="1" data-volume="70" data-streamurl="https://myradio24.org/13798"></div> 
+        </div>
+</div>
+
 <section data-bs-version="5.1" class="news08 cid-vfW0X4h8y3" id="news08-9">
   <div class="container">
     <div class="row justify-content-center mb-5">
@@ -178,12 +204,12 @@
 <script src="assets/parallax/jarallax.js"></script>
 <script src="assets/dropdown/js/navbar-dropdown.js"></script>
 <script src="assets/theme/js/script.js"></script>
-<script src="https://myradio24.com/player/player.js?v3.31" data-radio="13798" data-interval="15" data-lang="ru"></script>
+
+<script src="https://myradio24.com/player/player.js?v3.31" data-radio="13798" data-interval="15" data-vmid="0" data-lang="ru"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <script>
-    // 1. Скрипт для работы кнопки чарта (Раскрытие)
     document.addEventListener('DOMContentLoaded', function() {
         var btn = document.getElementById('toggleChart');
         var content = document.getElementById('chartContent');
@@ -196,8 +222,6 @@
                 }
             });
         }
-        
-        // 2. Скрипт загрузки чарта из базы
         loadSupabaseChart();
     });
 
@@ -205,19 +229,7 @@
         const SB_URL = 'https://immwfduunwqqpkoszfeb.supabase.co';
         const SB_KEY = 'sb_publishable_IizaK7JwvJsaWv8x6qrLUg_OKWK7bqL';
         const _supabase = supabase.createClient(SB_URL, SB_KEY);
-
-        const { data, error } = await _supabase
-            .from('music_chart')
-            .select('full_content')
-            .eq('id', 1)
-            .single();
-
-        if (error) {
-            console.error("Ошибка загрузки:", error);
-            document.getElementById('live-chart-content').innerText = "Ошибка загрузки чарта.";
-            return;
-        }
-
+        const { data, error } = await _supabase.from('music_chart').select('full_content').eq('id', 1).single();
         if (data && data.full_content) {
             document.getElementById('live-chart-content').innerText = data.full_content;
         }
